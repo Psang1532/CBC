@@ -1,5 +1,15 @@
 
 services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1532
+      POSTGRES_DB: appdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
   backend:
     build: ./backend
     ports:
@@ -8,3 +18,11 @@ services:
       - ./backend:/app
     environment:
       - ENV=development
+      - DATABASE_URL=postgresql+asyncpg://postgres:1532@db:5432/appdb
+    env_file:
+      - .env
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:  
