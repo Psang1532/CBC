@@ -14,6 +14,8 @@ from alembic import context
 from app.models.base import Base
 from app.models.user.student import Student
 from app.models.user.teacher import Teacher
+from app.models.enterprise.project import EnterpriseProject
+from app.models.enterprise.project_file import EnterpriseProjectFile
 
 # this is the Alembic Config object
 config = context.config

@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 1532
-      POSTGRES_DB: appdb
+      POSTGRES_DB: csl
     ports:
       - "5432:5432"
     volumes:
@@ -18,7 +18,7 @@ services:
       - ./backend:/app
     environment:
       - ENV=development
-      - DATABASE_URL=postgresql+asyncpg://postgres:1532@db:5432/appdb
+      - DATABASE_URL=postgresql+asyncpg://postgres:1532@db:5432/csl
     env_file:
       - .env
     depends_on:

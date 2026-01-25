@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    database_url: str = "postgresql+asyncpg://postgres:1532@db:5432/appdb"
+    database_url: str = "postgresql+asyncpg://postgres:1532@db:5432/csl"
     SECRET_KEY: str 
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
