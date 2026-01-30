@@ -23,7 +23,7 @@ class StudentUpdate(BaseSchema):
 
 
 class StudentRead(BaseSchema):
-    id: int               # = full_name
+    id: str
     full_name: str
     student_id: str
     institution_name: str

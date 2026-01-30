@@ -1,30 +1,34 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List
 from datetime import datetime
+from typing import Optional
+
+from pydantic import Field
+
+from app.models.enterprise.project import ProjectStatus
+from app.schemas.base import BaseSchema
 
 
-class ProjectBase(BaseModel):
+class ProjectBase(BaseSchema):
     title: str
-    description: Optional[str] = None
+    designation: str
+    county_of_origin: str
+    idea_description: str
     grade_level: int = Field(..., ge=10, le=12)
 
 
 class ProjectCreate(ProjectBase):
-    is_draft: bool = True
+    pass
 
 
-class ProjectUpdate(BaseModel):
+class ProjectUpdate(BaseSchema):
     title: Optional[str] = None
-    description: Optional[str] = None
-    is_draft: Optional[bool] = None
+    designation: Optional[str] = None
+    county_of_origin: Optional[str] = None
+    idea_description: Optional[str] = None
 
 
 class ProjectRead(ProjectBase):
-    id: int
+    id: str
     student_id: str
-    is_draft: bool
+    status: ProjectStatus
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True

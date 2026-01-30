@@ -1,7 +1,9 @@
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from app.schemas.base import BaseSchema
 
 
-class StudentBase(BaseModel):
+class StudentBase(BaseSchema):
     student_id: str = Field(
         ...,
         description="Government-issued unique student identifier"
@@ -13,7 +15,4 @@ class StudentCreate(StudentBase):
 
 
 class StudentRead(StudentBase):
-    id: int
-
-    class Config:
-        from_attributes = True
+    id: str

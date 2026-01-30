@@ -1,5 +1,6 @@
 from sqlalchemy import String, Integer, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING
 
 from ..base import Base
 
@@ -21,3 +22,7 @@ class EnterpriseProjectFile(Base):
         "EnterpriseProject",
         back_populates="files"
     )
+
+
+if TYPE_CHECKING:
+    from .project import EnterpriseProject

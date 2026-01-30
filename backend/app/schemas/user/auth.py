@@ -10,3 +10,7 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     username: str | None = None
     role: str | None = None  # "student" or "teacher"
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str

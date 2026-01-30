@@ -85,11 +85,8 @@ class EnterpriseFileStorageService:
 
             saved_files.append(
                 {
-                    "original_name": file.filename,
-                    "stored_name": stored_name,
-                    "path": str(file_path),
-                    "size": size,
-                    "content_type": file.content_type,
+                    "filename": stored_name,
+                    "filepath": str(file_path),
                 }
             )
 

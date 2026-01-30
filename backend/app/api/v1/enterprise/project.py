@@ -10,18 +10,16 @@ from fastapi import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.session import get_async_db
-from app.dependencies import get_current_student
+from app.dependencies import get_async_db, get_current_student
 
-from app.schemas.enterprise import (
-    ProjectCreateSchema,
-    ProjectReadSchema,
-)
+from app.schemas.enterprise import ProjectCreate, ProjectRead
 
 from app.repositories.enterprise.project_repository import ProjectRepository
 from app.repositories.enterprise.project_file_repository import ProjectFileRepository
 
 from app.services.enterprise.project_services import ProjectService
+from app.services.enterprise.file_storage_services import EnterpriseFileStorageService
+from app.models.enterprise.project import ProjectStatus
 
 
 router = APIRouter(
@@ -35,11 +33,11 @@ router = APIRouter(
 # ---------------------------------------------------------------------
 @router.post(
     "/draft",
-    response_model=ProjectReadSchema,
+    response_model=ProjectRead,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_or_update_draft(
-    payload: ProjectCreateSchema,
+    payload: ProjectCreate,
     db: AsyncSession = Depends(get_async_db),
     student=Depends(get_current_student),
 ):
@@ -54,7 +52,7 @@ async def create_or_update_draft(
 
     service = ProjectService(
         project_repo=ProjectRepository(db),
-        file_repo=ProjectFileRepository(db),
+        project_file_repo=ProjectFileRepository(db),
     )
 
     project = await service.create_or_replace_draft(
@@ -97,7 +95,7 @@ async def upload_project_files(
             detail="Project not found",
         )
 
-    if project.status not in ("draft", "rejected"):
+    if project.status not in (ProjectStatus.DRAFT, ProjectStatus.REJECTED):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Files cannot be uploaded at this stage",
@@ -105,12 +103,19 @@ async def upload_project_files(
 
     service = ProjectService(
         project_repo=project_repo,
-        file_repo=ProjectFileRepository(db),
+        project_file_repo=ProjectFileRepository(db),
+    )
+
+    saved_files = EnterpriseFileStorageService.save_files(
+        student_id=student.student_id,
+        grade_level=project.grade_level,
+        project_id=project.id,
+        files=files,
     )
 
     await service.replace_project_files(
         project=project,
-        uploaded_files=files,
+        new_files=saved_files,
     )
 
     return {"detail": "Files uploaded successfully"}
@@ -144,7 +149,7 @@ async def submit_project(
 
     service = ProjectService(
         project_repo=repo,
-        file_repo=ProjectFileRepository(db),
+        project_file_repo=ProjectFileRepository(db),
     )
 
     await service.submit_project(project)
@@ -180,7 +185,7 @@ async def resubmit_project(
 
     service = ProjectService(
         project_repo=repo,
-        file_repo=ProjectFileRepository(db),
+        project_file_repo=ProjectFileRepository(db),
     )
 
     await service.resubmit_project(project)
@@ -193,7 +198,7 @@ async def resubmit_project(
 # ---------------------------------------------------------------------
 @router.get(
     "/my-projects",
-    response_model=List[ProjectReadSchema],
+    response_model=List[ProjectRead],
     status_code=status.HTTP_200_OK,
 )
 async def list_my_projects(

@@ -1,7 +1,7 @@
 from typing import List
 
-from app.models.enterprise.project import Project, ProjectStatus
-from app.models.enterprise.project_file import ProjectFile
+from app.models.enterprise.project import EnterpriseProject, ProjectStatus
+from app.models.enterprise.project_file import EnterpriseProjectFile as ProjectFile
 from app.repositories.enterprise.project_repository import ProjectRepository
 from app.repositories.enterprise.project_file_repository import ProjectFileRepository
 
@@ -28,7 +28,7 @@ class ProjectService:
         designation: str,
         county_of_origin: str,
         idea_description: str,
-    ) -> Project:
+    ) -> EnterpriseProject:
         """
         Ensures a single draft exists per student per grade.
         If a draft already exists, it is replaced.
@@ -51,7 +51,7 @@ class ProjectService:
             existing.idea_description = idea_description
             return existing
 
-        project = Project(
+        project = EnterpriseProject(
             student_id=student_id,
             grade_level=grade_level,
             title=title,
@@ -71,7 +71,7 @@ class ProjectService:
     async def attach_files_to_project(
         self,
         *,
-        project: Project,
+        project: EnterpriseProject,
         files: List[dict],
     ) -> None:
         """
@@ -85,17 +85,15 @@ class ProjectService:
         for file in files:
             project_file = ProjectFile(
                 project_id=project.id,
-                file_name=file["file_name"],
-                file_path=file["file_path"],
-                file_size=file["file_size"],
-                mime_type=file["mime_type"],
+                filename=file["filename"],
+                filepath=file["filepath"],
             )
             await self.project_file_repo.add(project_file)
 
     async def replace_project_files(
         self,
         *,
-        project: Project,
+        project: EnterpriseProject,
         new_files: List[dict],
     ) -> None:
         """
@@ -110,7 +108,7 @@ class ProjectService:
     # Submission
     # ---------------------------------------------------------
 
-    async def submit_project(self, *, project: Project) -> Project:
+    async def submit_project(self, *, project: EnterpriseProject) -> EnterpriseProject:
         """
         Locks project from further student edits.
         """
@@ -125,7 +123,7 @@ class ProjectService:
     # Resubmission
     # ---------------------------------------------------------
 
-    async def resubmit_project(self, *, project: Project) -> Project:
+    async def resubmit_project(self, *, project: EnterpriseProject) -> EnterpriseProject:
         """
         Allowed only after rejection.
         """
@@ -140,7 +138,7 @@ class ProjectService:
     # Student Visibility
     # ---------------------------------------------------------
 
-    async def list_student_projects(self, *, student_id: str) -> List[Project]:
+    async def list_student_projects(self, *, student_id: str) -> List[EnterpriseProject]:
         """
         Students can see drafts, submitted, rejected, graded projects.
         """

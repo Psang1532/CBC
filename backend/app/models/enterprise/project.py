@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, TYPE_CHECKING
 from sqlalchemy import String, Integer, Enum, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from ..base import Base
@@ -32,6 +32,10 @@ class EnterpriseProject(Base):
         cascade="all, delete-orphan",
         lazy="joined",
     )
+
+
+if TYPE_CHECKING:
+    from .project_file import EnterpriseProjectFile
 
     __table_args__ = (
         UniqueConstraint(

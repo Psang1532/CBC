@@ -1,9 +1,11 @@
-from pydantic import BaseModel
 from datetime import datetime
 
+from app.schemas.base import BaseSchema
 
-class ProjectFileBase(BaseModel):
+
+class ProjectFileBase(BaseSchema):
     filename: str
+    filepath: str
 
 
 class ProjectFileCreate(ProjectFileBase):
@@ -11,10 +13,6 @@ class ProjectFileCreate(ProjectFileBase):
 
 
 class ProjectFileRead(ProjectFileBase):
-    id: int
-    project_id: int
-    file_path: str
-    uploaded_at: datetime
-
-    class Config:
-        from_attributes = True
+    id: str
+    project_id: str
+    created_at: datetime

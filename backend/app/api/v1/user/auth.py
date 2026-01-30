@@ -5,12 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 from app.dependencies import get_async_db 
-from app.core.security import create_access_token, create_refresh_token, get_password_hash, verify_password
+from app.core.security import create_access_token, create_refresh_token, decode_token, get_password_hash, verify_password
 from app.models.user.student import Student
 from app.models.user.teacher import Teacher
 from app.repositories.user.student_repository import StudentRepository
 from app.repositories.user.teacher_repository import TeacherRepository
-from app.schemas.user.auth import Token
+from app.schemas.user.auth import Token, RefreshTokenRequest
 from app.schemas.user.student import StudentCreate
 from app.schemas.user.teacher import TeacherCreate
 
@@ -25,7 +25,8 @@ async def register_student(
     repo = StudentRepository(db)
 
     # Check if username already exists (across both tables)
-    if await repo.get_by_username(student_in.full_name):
+    username = student_in.full_name.strip()
+    if await repo.get_by_username(username):
         raise HTTPException(
             status_code=400,
             detail="Username (full name) already registered"
@@ -36,8 +37,8 @@ async def register_student(
             detail="Student ID already registered"
         )
 
-    # Username = full_name (normalized a bit)
-    username = student_in.full_name.strip().lower()
+    # Username = full_name (no case normalization)
+    username = student_in.full_name.strip()
 
     student = Student(
         username=username,
@@ -51,8 +52,8 @@ async def register_student(
 
     await repo.create(student)
 
-    access_token = create_access_token(student.username)
-    refresh_token = create_refresh_token(student.username)
+    access_token = create_access_token(student.username, role="student")
+    refresh_token = create_refresh_token(student.username, role="student")
 
     return Token(
         access_token=access_token,
@@ -68,7 +69,8 @@ async def register_teacher(
 ):
     repo = TeacherRepository(db)
 
-    if await repo.get_by_username(teacher_in.full_name):
+    username = teacher_in.full_name.strip()
+    if await repo.get_by_username(username):
         raise HTTPException(
             status_code=400,
             detail="Username (full name) already registered"
@@ -79,7 +81,7 @@ async def register_teacher(
             detail="TSC number already registered"
         )
 
-    username = teacher_in.full_name.strip().lower()#normalization of username
+    username = teacher_in.full_name.strip()
 
     teacher = Teacher(
         username=username,
@@ -93,8 +95,8 @@ async def register_teacher(
 
     await repo.create(teacher)
 
-    access_token = create_access_token(teacher.username)
-    refresh_token = create_refresh_token(teacher.username)
+    access_token = create_access_token(teacher.username, role="teacher")
+    refresh_token = create_refresh_token(teacher.username, role="teacher")
 
     return Token(
         access_token=access_token,
@@ -113,8 +115,8 @@ async def login(
     student = await student_repo.get_by_username(form_data.username)
 
     if student and verify_password(form_data.password, student.password_hash):
-        access_token = create_access_token(student.username)
-        refresh_token = create_refresh_token(student.username)
+        access_token = create_access_token(student.username, role="student")
+        refresh_token = create_refresh_token(student.username, role="student")
         return Token(access_token=access_token, refresh_token=refresh_token)
 
     # Then teacher
@@ -122,12 +124,37 @@ async def login(
     teacher = await teacher_repo.get_by_username(form_data.username)
 
     if teacher and verify_password(form_data.password, teacher.password_hash):
-        access_token = create_access_token(teacher.username)
-        refresh_token = create_refresh_token(teacher.username)
+        access_token = create_access_token(teacher.username, role="teacher")
+        refresh_token = create_refresh_token(teacher.username, role="teacher")
         return Token(access_token=access_token, refresh_token=refresh_token)
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Incorrect username or password",
         headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
+@router.post("/refresh", response_model=Token)
+async def refresh_access_token(payload: RefreshTokenRequest):
+    """
+    Exchange a refresh token for a new access token.
+    Validates role claim from the refresh token.
+    """
+    token_data = decode_token(payload.refresh_token)
+    username = token_data.get("sub")
+    role = token_data.get("role")
+
+    if not username or role not in {"student", "teacher"}:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    access_token = create_access_token(username, role=role)
+    return Token(
+        access_token=access_token,
+        refresh_token=payload.refresh_token,
+        token_type="bearer",
     )
